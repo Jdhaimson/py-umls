@@ -330,8 +330,34 @@ class RxNormLookup (object):
 					break
 		
 		return rxcuis
-	
-	
+
+
+	def rxclass_for_rxcui(self, rxcui):
+		""" Returns the names of the drug classes for a given drug using
+		RxNav's service against the provided rxcui. Runs synchronously.
+
+		:param str rxcui: The rxcui to get the drug classes for
+		:returns: The drug classes, if any, as a list
+		"""
+		if rxcui is None:
+			return None
+
+		url = 'http://rxnav.nlm.nih.gov/REST/rxclass/class/byRxcui'
+		r = requests.get(url, params={'rxcui': rxcui, 
+                                      'relas': 'has_VAClass',
+                                      'relaSource': 'ndfrt'})
+		root = ET.fromstring(r.text)
+		candidates = root.findall('.//rxclassMinConceptItem')
+		rxclasses = []
+		for cand in candidates:
+			rxclass = cand.find('className')
+			if rxclass is not None and rxclass.text is not None:
+				if rxclass.text not in rxclasses:
+					rxclasses.append(rxclass.text)
+
+		return rxclasses
+
+
 	# MARK: - Drug Class OBSOLETE, WILL BE GONE
 	
 	def can_cache(self):
